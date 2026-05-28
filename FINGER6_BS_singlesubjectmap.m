@@ -23,7 +23,7 @@ figpath = 'G:\Fingerprinting\kmeans\Subject_maps_bs_group\' ;
 subs = {'sub-0001'	'sub-0001'	'sub-0002'	'sub-0002'	'sub-0006'	'sub-0006'  'sub-0008'	'sub-0008'	'sub-0011'	'sub-0011'  'sub-0016'	'sub-0016'	'sub-0019'	'sub-0019'	'sub-0020'	'sub-0020'	'sub-0022'	'sub-0022'	'sub-0023'	'sub-0023'	'sub-0025'	'sub-0025'	'sub-0030'	'sub-0030'	'sub-0032'	'sub-0032'	'sub-0035'	'sub-0035'	'sub-0039'	'sub-0039'	'sub-0040'	'sub-0040'	'sub-0041'	'sub-0041'	'sub-0042'	'sub-0042'	'sub-0044'	'sub-0044'	'sub-0046'	'sub-0046'	'sub-0048'	'sub-0048'	'sub-0049'	'sub-0049'	'sub-0050'	'sub-0050'	'sub-0051'	'sub-0051'	'sub-0106'	'sub-0106'	'sub-0150'	'sub-0150'	'sub-0200'	'sub-0200'};
 sess = {'ses-0001'	'ses-0003'	'ses-0004'	'ses-0002'	'ses-0001'	'ses-0003'  'ses-0001'	'ses-0002'	'ses-0002'	'ses-0001'  'ses-0002'	'ses-0001'	'ses-0003'	'ses-0002'	'ses-0004'	'ses-0003'	'ses-0002'	'ses-0001'	'ses-0001'	'ses-0002'	'ses-0003'	'ses-0002'	'ses-0001'	'ses-0002'	'ses-0001'	'ses-0002'	'ses-0003'	'ses-0002'	'ses-0001'	'ses-0002'	'ses-0005'	'ses-0004'	'ses-0003'	'ses-0001'	'ses-0001'	'ses-0002'	'ses-0002'	'ses-0003'	'ses-0002'	'ses-0001'	'ses-0004'	'ses-0002'	'ses-0002'	'ses-0001'	'ses-0004'	'ses-0002'	'ses-0001'	'ses-0002'	'ses-0001'	'ses-0002'	'ses-0001'	'ses-0002'	'ses-0001'	'ses-0002'};
 
-cd('G:\Fingerprinting\kmeans\'); % load group Nk according to condition!!!
+cd('F:\Fingerprinting\kmeans\'); % load group Nk according to condition!!!
 load kmeans_10mm_Nk25_150tr_step200ms_bs_group % kmeans for between-session group
 
 cd('Z:\OMEGA\OMEGA_data\sub-0001\ses-0003'); % load sources of a subject as template to conduct the plotting
@@ -119,13 +119,25 @@ for sub=1:numel(subs)
             ff(idf(k),1) = round(foi(locs(1)),1);
             ff(idf(k),2) = round(foi(locs(1)),1);      % if unimodal spectrum, repeat 1st peak
         elseif length(pks) == 2                            % bimodal spectrum
-            ff(idf(k),1) = round(foi(locs(1)),1);
-            ff(idf(k),2) = round(foi(locs(2)),1);
+            if (foi(locs(1)-1)*2 > foi(locs(2)-1) &  foi(locs(1)-1)*2 < foi(locs(2)+1)) | ...
+                    (foi(locs(1)+1)*2 > foi(locs(2)-1) &  foi(locs(1)+1)*2 < foi(locs(2)+1))
+                ff(idf(k),1) = round(foi(locs(1)),1);     % harmonics: only 1st peak (fundamental frequency)
+                ff(idf(k),2) = round(foi(locs(1)),1);
+            else
+                ff(idf(k),1) = round(foi(locs(1)),1);     % no harmonics: take both peaks
+                ff(idf(k),2) = round(foi(locs(2)),1);
+            end
         elseif length(pks) > 2                         % in case of a third residual peak
             [~,id] = sort(pks,'descend');
             locs = locs(id(1:2));
-            ff(idf(k),1) = round(foi(locs(1)),1);
-            ff(idf(k),2) = round(foi(locs(2)),1);
+            if (foi(locs(1)-1)*2 > foi(locs(2)-1) &  foi(locs(1)-1)*2 < foi(locs(2)+1)) | ...
+                    (foi(locs(1)+1)*2 > foi(locs(2)-1) &  foi(locs(1)+1)*2 < foi(locs(2)+1))
+                ff(idf(k),1) = round(foi(locs(1)),1);     % harmonics: only 1st peak (fundamental frequency)
+                ff(idf(k),2) = round(foi(locs(1)),1);
+            else
+                ff(idf(k),1) = round(foi(locs(1)),1);     % no harmonics: take both peaks
+                ff(idf(k),2) = round(foi(locs(2)),1);
+            end
         elseif length(pks) == 0
             badk = [badk idf(k)];
         end
@@ -168,7 +180,7 @@ for sub=1:numel(subs)
             propinterp(:,i) = interp(propkzneig(:,i),10);
             % propinterp(:,i) = interp1(propkzneig(:,i),f2,'pchip');
         end
-        [h,p,ci,stats] = ttest(propinterp');
+        [h,p,ci,stats] = ttest(propinterp',0,'Tail','right');
 
         [tmax,idmax] = max(stats.tstat);
         fnatsm(vx) = f2(idmax);

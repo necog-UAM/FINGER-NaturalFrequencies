@@ -13,7 +13,7 @@ clc
 restoredefaultpath
 addpath ('Z:\Toolbox\fieldtrip-20230118');
 ft_defaults
-addpath ('Z:\Fingerprinting\scripts');
+addpath(genpath('Z:\Fingerprinting\scripts'));
 
 dpath = 'G:\Fingerprinting\Omega_data\';
 figpath = 'G:\Fingerprinting\kmeans\Subject_maps_ws_group\' ;
@@ -120,14 +120,26 @@ for sub=1:numel(subs)
             if length(pks) == 1                                % unimodal spectrum
                 ff(idf(k),1) = round(foi(locs(1)),1);
                 ff(idf(k),2) = round(foi(locs(1)),1);      % if unimodal spectrum, repeat 1st peak
-            elseif length(pks) == 2                            % bimodal spectrum
-                ff(idf(k),1) = round(foi(locs(1)),1);
-                ff(idf(k),2) = round(foi(locs(2)),1);
+            elseif length(pks) == 2        
+                if (foi(locs(1)-1)*2 > foi(locs(2)-1) &  foi(locs(1)-1)*2 < foi(locs(2)+1)) | ...
+                        (foi(locs(1)+1)*2 > foi(locs(2)-1) &  foi(locs(1)+1)*2 < foi(locs(2)+1))
+                    ff(idf(k),1) = round(foi(locs(1)),1);     % harmonics: only 1st peak (fundamental frequency)
+                    ff(idf(k),2) = round(foi(locs(1)),1);
+                else     
+                    ff(idf(k),1) = round(foi(locs(1)),1);     % no harmonics: take both peaks
+                    ff(idf(k),2) = round(foi(locs(2)),1);
+                end
             elseif length(pks) > 2                         % in case of a third residual peak
                 [~,id] = sort(pks,'descend');
                 locs = locs(id(1:2));
-                ff(idf(k),1) = round(foi(locs(1)),1);
-                ff(idf(k),2) = round(foi(locs(2)),1);
+                if (foi(locs(1)-1)*2 > foi(locs(2)-1) &  foi(locs(1)-1)*2 < foi(locs(2)+1)) | ...
+                        (foi(locs(1)+1)*2 > foi(locs(2)-1) &  foi(locs(1)+1)*2 < foi(locs(2)+1))
+                    ff(idf(k),1) = round(foi(locs(1)),1);     % harmonics: only 1st peak (fundamental frequency)
+                    ff(idf(k),2) = round(foi(locs(1)),1);
+                else     
+                    ff(idf(k),1) = round(foi(locs(1)),1);     % no harmonics: take both peaks
+                    ff(idf(k),2) = round(foi(locs(2)),1);
+                end   
             elseif length(pks) == 0
                 badk = [badk idf(k)];
             end
@@ -169,7 +181,7 @@ for sub=1:numel(subs)
             for i=1:size(propkzneig,2)
                 propinterp(:,i) = interp(propkzneig(:,i),10);
             end
-            [h,p,ci,stats] = ttest(propinterp');
+            [h,p,ci,stats] = ttest(propinterp',0,'Tail','right');
 
             [tmax,idmax] = max(stats.tstat);
             fnatsm(vx) = f2(idmax);
